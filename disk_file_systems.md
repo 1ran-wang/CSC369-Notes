@@ -67,3 +67,12 @@ the first block points to the second etc
 - works poorly if we want to access the last block of a big file
 - use an in memory File Allocation Table, indexed by the address of data block
 
+## Summary 
+
+- Inodes
+  + Data Structure representing a file system object (file or dir)
+  + Attributes, disk block locations 
+  - No file name, just metadata 
+- Directory 
+  + list of (name, inode) mappings 
+  - each directory entry: a file, directory, link, itself (.), oarent dir (..) etc 
