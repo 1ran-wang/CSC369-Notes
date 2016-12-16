@@ -6,11 +6,11 @@
   + An abstraction of the hardware, supporting basic functions of the computer such as scheduling tasks, executing apps, and controlling peripherals
   + allow programs to share memory, allow them to interact with devices etc 
 - Purpose of an Operating Sysem?
-  + Virtualizaion
+  1. Virtualizaion
     * Makes the system easier to use, because you do not need to worry about hardware specifics such as where memory is, etc 
     * Takes the physical resource such as the processor or disk and transforms it into a more general, easy to use virtual form of itself
-  + Provides a standard Library for applications 
-  + Manages resources 
+  2. Provides a standard Library for applications 
+  3. Manages resources 
   
 ### Processes & Threads 
 
