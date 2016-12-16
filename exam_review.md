@@ -70,3 +70,24 @@
   + page replacement 
 
 ### Virtualizing Memory 
+
+- What is the difference between a physical and virtual address?
+- What is the difference between fixed and variable partitioning?
+  + How do base and limit registers work?
+- What is internal fragmentation?
+- What is external fragmentation?
+- What is a protection fault? 
+
+### Paging 
+
+- How is paging different from partitioning?
+- What are the advantages/disadvantages of paging?
+- What are page tables?
+- What are page table entries?
+- What are all the PTE bits used for 
+- Know these terms very well
+  + Virtual page number (VPN), page frame number (PFN), offset 
+- Know how to break down virtual addresses into page numbers, offset
+  + and how to translate virtual to physical 
+
+### Page Tables 
