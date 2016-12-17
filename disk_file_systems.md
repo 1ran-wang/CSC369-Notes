@@ -86,7 +86,60 @@ the first block points to the second etc
 - Soft (Symbolic) links 
   + "Pointer" to a given file 
   + Contains the path 
+
+- A hard link points to a file by inode number. The file you link must exist in the file system
+  + If you delete the original name, then the hard link still points to the same file
+- A soft link points to a file by _name_. The name does not actually have to exist or may exist on a different filesytem
+  + If you replace the named file (without changing name) then the link points to the new file
   
 ### The content of a data block 
 
-- 
+- If it belongs to a regular file 
+  + Data of the file 
+- If it belongs to a directory 
+  + list of directory entries: (name, inode number) pairs, which are entries under the directory 
+- If it belongs to a symbolic link 
+  + The path of the file that it links to 
+
+### Unix Inodes and Path Search 
+
+- Unix inodes are not directories, they descrive where on the disk the blocks for a file are placed 
+  + Directories are files, so inodes also describe where the blocks for the directories are placed on disk 
+- Directory entries map file names to inodes 
+  + to open "/somefile", use Master block to find inode "/" on disk and read inode into memory
+  + inode allows us to find the data block for directory "/"
+  + Read data block for "/", look for entry "somefile"
+  + This entry identifies the inode for "somefile"
+  + Read the inode for "somefile" into memory 
+  + The inode says where the first data block is on disk 
+  + Read that block into memory to access data in the file 
+  
+## Performance Optimizations 
+
+### Caching 
+
+- file operations (open, read and write) incur a good amount of disk I/O 
+- caching helps the file system perform reasonably well 
+
+### File Buffer Cache 
+
+- Key observation: Applications exhibit significant locality for reading and writing files
+- Idea: Cache file blocks in memory to capture locality 
+  + This is called the __file buffer cache__
+  + Cache is system wide, used and shared by all processes 
+  + Reading from the cache makes a disk perform like memory 
+  + Significant reuse: spatial and temporal locality 
+  + Even a 4 MB cache can be very effective 
+- What do we want to cache? 
+  + Inodes, directory entries, disk blocks for "hot files", even whole files if small 
+  
+### Caching and Buffering 
+
+- Static Partitioning: at boot time, allocate a fixed size cache in memory (typically 10%) 
+  + Can be wasteful if the file system doesn't really need 10% if memory 
+- Dynamic Partitioning: Integrate virtual memory pages and file system pages into a unified page cache, so pages of memory
+can be flexibly allocated for either virtual memory or file system, used by modern systems 
+
+- Replacement policy: typically use LRU 
+- The tradeoff between static and dynamic partitioning 
+  + To be considered on any resource allocation kind of problem 
