@@ -76,3 +76,17 @@ the first block points to the second etc
 - Directory 
   + list of (name, inode) mappings 
   - each directory entry: a file, directory, link, itself (.), oarent dir (..) etc 
+
+### Links: Examples 
+
+- Hard links 
+  + Multiple file names (and directory entries) mapped to the same inode 
+  + Reference count - only remove file when it reaches 0 
+  
+- Soft (Symbolic) links 
+  + "Pointer" to a given file 
+  + Contains the path 
+  
+### The content of a data block 
+
+- 
