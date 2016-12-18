@@ -143,3 +143,96 @@ can be flexibly allocated for either virtual memory or file system, used by mode
 - Replacement policy: typically use LRU 
 - The tradeoff between static and dynamic partitioning 
   + To be considered on any resource allocation kind of problem 
+
+- works well for reads but not for writes 
+  + writes still have to go to disk to become persistent anyways 
+  + once a block is modified in memory, the write back to disk may not be immediate (synchronous) 
+  
+### Tradeoff: speed vs durability 
+
+- caching and buffering improves the speed of file system reads and writes 
+- however it sacrifices the durability of data 
+  + crash occurs => buffered writes not written to disk yet so they are lost 
+  + better durability => sync to disk more frequently => worse speed 
+- When to favour speed? when to favour durability?
+  + depends on the application and its needs (e.g web browser cache or bank database) 
+  
+### Approaches? 
+
+- delay writes only for a specific amount of time 
+  - how long do we hold dirty data in memory?
+- asynchronous writes ('write-behind) 
+  + maintain a queue of uncomitted blocks 
+  + periodically flush the queue to disk 
+  + unreliable 
+- Battery backed up RAM (NVRAM) 
+  + as with write-behind, but maintain queue in NVRAM 
+  + expensive 
+- log-structured file system 
+  + always write contiguously at end of previously write 
+  
+### Read Ahead 
+
+- many file systems implement "read ahead"
+  + FS predicts that the process will request next block 
+  + FS goes ahead and requests it from disk 
+  + This can happen while the process is computing on previous block 
+    * overlap I/O with execution 
+  - when the process requests block, it will be in the cache 
+  - compliments the on-disk cache, which also is doing read ahead 
+- for sequentially accessed files, can be very effective 
+  * unless blocks for the file are scattered across the disk 
+  * file systems try to prevent that during allocation 
+  
+## Disk's Physical Characteristics 
+
+### Secondary Storage Devices 
+
+- Drums 
+- Magnetic disks 
+  + fixed disks 
+  + removable disks 
+- Optical disks 
+  + write once, read many (CD-R, DVD-R)
+  + write many, read many (CD-RW) 
+  
+### Disk Performance 
+
+- disk request performance depends on a number of steps 
+  + Seek - moving the disk arm to the correct cylinder 
+    * depends on how fast disk arm can move
+    * typical times: 1-15 ms, depending on distance (avg 5-6 ms)
+  + Rotation - waiting for the sector to rotate under the head 
+    * depends on rotation rate of disk 
+    * avaerage latency 1/2 rotation 
+  + transfer - transferring data from surface into disk controller electronics, sending it back to the host
+    * depends on density 
+    * improving rapidly (40% per year) 
+
+### Some hardware optimizations 
+
+- Track skew 
+  + if arm moves to the correct track to slowly, we may miss the sector we want and we need to do another 
+  entire rotation to reach it 
+  + instead, skew the track location, so we have enough time to position 
+- Zones 
+  + outer tracks are larger so they should hold more sectors 
+
+- Cache, aka Track Buffer 
+  + A small memory chip, part of the hard drive (usually 8-16 MB)
+  + different from cache that OS has 
+    * unlike OS cache, it is aware of disk geometry  
+    * when reading a sector, may cache the whole track to speed up future reads on the same track 
+
+### Disk and the OS 
+
+- disks are messy physical devices:
+  + errors, bad blocks, missed seeks 
+- the job of the OS is to hide this mess from higher level software   
+  + low level device control 
+  + higher level abstractions 
+- The OS may provide different levels of disk access to different clients 
+  + physical disk (surface, cylinder, sector)
+  + logical disk (disk block #)
+  + logical file (file block, record, or byte #) 
+  
