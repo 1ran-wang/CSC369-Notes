@@ -236,3 +236,123 @@ can be flexibly allocated for either virtual memory or file system, used by mode
   + logical disk (disk block #)
   + logical file (file block, record, or byte #) 
   
+### Disk Interaction 
+
+- specifying disk requests require a lot of info 
+  + cylinder num, surface num, track num, sector num, transfer size ...
+- modern disks are more complication 
+  + not all sectors are the same size, sectors are remapped 
+- Current disks provide a higher level interface (SCSI) 
+  + the disk exports its data as a logical array of blocks 
+    * disk maps logical blocks to cylinder/surface/track/sector 
+  + only need to specify the logical block # to read/wrtie 
+  + but now the disk parameters are hidden from the OS 
+
+### Back to File Systems ... 
+- Key idea: File Systems need to be aware of disk characteristics for performacne 
+  + allocation algorithms enhance performance 
+  + request scheduling to reduce seek time 
+
+### Enhancing achieved disk performance 
+
+- high-level disk characteristics yield two goals:
+  + closeness
+    * reduce seek times by putting related things close to each other 
+    * generally, benefits can be in the factor of 2 range 
+  + Amortization 
+    * amortize each positioning delay by grabbing lots of useful data 
+    * generally, benefits can reach into factor of 10 range 
+    
+### Allocation Strategies 
+
+- disk performs best if seeks are reduced and large transfers are used 
+  + scheduling requests is one way to achieve this 
+  + allocating related data "close together" on the disk is even more important 
+
+## FFS: A disk-aware file system 
+
+### Original Unix File System 
+
+- recall FS sees storage as linear array of blocks (each block has logical block number (LBN)) 
+- default usage of LBN space is (superblockm bitmap, inodes, data blocks) 
+  + simple and straightforward by very poor utilization of disk bandwidth 
+
+### Data and Inode Placement - Problem \#1
+  - on a new FS, blocks are allocated sequentially, clost to each other 
+  - as the FS gets older, files are being deleted and create random gaps 
+    + data blocks end up allocated far from each other 
+    + fragmentation causes more seeking 
+
+### Data and Inode Placement - Problem \#2
+
+- inodes allocated far from blocks 
+- traversing file name paths, manipulating files and directories require going back and forth from inodes
+to data blocks 
+  + again lots of seeks 
+
+### FFS (Fast File System)
+
+- improved disk utilization, decreased response time
+- All modern FSs draw from the lessons learned from FFS
+
+### Cylinder Groups 
+
+- BSD FFS addressed placement problems using the notion a cylinder group
+  + data blocks in same file allocated in same cylinder group 
+  + files in same directory allocated in same cylinder group
+  + inodes for files are allocated in same cylinder group as file data blocks 
+- allocation in groups reduces number of long seeks 
+- free space requirement 
+  + to be able to allocate according to cylinder gropus, the disk must have free space scattered across cylinders 
+  + 10% of disk reserved just for keeping the disk partially free all the time 
+  + when allocating large files, break it into large chunks and allocated from different cylinder groups, 
+  so it does not fill up one cylicder roup 
+  + if preferred cylinder group is full, allocated from a "nearby" group 
+  
+### More FFS solutions 
+
+- small blocks in original UNIX FS caused 2 problems 
+  + low bandwidth utilization and small max file size (function of block size) 
+- fix using a larger block
+  + very large files only need two levels of inderection 
+  + new problem: internal fragmentation 
+  + fix: introduce fragments 
+- Problem: media failures 
+  + replicate master block(superblock) 
+- Problem: Device oblivous 
+  + paramterize according to device characteristics 
+
+### Disk Scheduling Algorithms 
+
+- because seeks are so expensive, OS tries to echedule disk requests that are queued for the disk
+- Policies for minimizing seeks:
+  1. FCFS (do nothing)
+    * Reasonable when load is low
+    * long waiting times for long request queues 
+  2. SSTF (shortest seek time first)
+    * minimize arm movement (seek time), maximize request rate 
+    * favors middle blocks 
+  3. SCAN (elevator) 
+    * service requests in one direction until done, then reverse
+  4. C-SCAN 
+    * like scan, but only go in one direction (typewriter) 
+  5. Look/C-Look 
+    * like SCAN/C-SCAN but only go far as last request in each direction (not fill width of the disk) 
+- In general, unless there are request queues, disk scheduling does not have much impact 
+  + important for servers, less so for PCs 
+- Modern disks often do the disk scheduling themselves 
+  + disk know their layout better than OS, can optimize better 
+  + if so, ignore/undoes any scheduling done by the OS 
+
+## Summary 
+
+- file systems overview 
+  + disks are large, persistent, but slow   
+  + Operations on files and directories, sharing 
+- File system organization 
+  + VSFS example, ext2, other strategies and design choices 
+- Performace enhancements: caching, read-ahead
+- Disks
+  + physical structure 
+  + Placement problems and strategies, FFS
+  + Disk Scheduling algorithms 
