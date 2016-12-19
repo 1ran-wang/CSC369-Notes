@@ -79,6 +79,8 @@ unlock(master_lock);
 ```
 
 - all or nothing approach: depending on whoe gets the master_lock first => no deadlock can happen
+- problematic because it makes encapsulation difficult because we always need to know which locks must be 
+acquired at which times 
 
 - Problems:
   + May wait a long time for all resources to be available at the same time 
@@ -145,4 +147,20 @@ __Processes must declare maximum resource needs up front__
   + tough luck if printer goes offline 
   
 ### Banker's Algorithm 
+- System can be in one of three states:
+  - Safe: for any possible sequence of requests, there is at least on safe dequence that eventually succeeds in
+  granting all pending and future requests 
+  - Unsafe: if all threads request there max resources at this point, system will deadlock
+  - deadlocked
 
+Algorithm 
+  - For every resource request 
+    1. Can the request be granted?
+      - if not, request is imposisble at this point => block the process until we can grant the request 
+    2. Assume that the request is granted
+      + update state assuming request is granted 
+    3. Check if new state is safe 
+      - if so, continure
+      - if not, restore old state and block processes until it is safe to grant the request 
+ 
+ 
