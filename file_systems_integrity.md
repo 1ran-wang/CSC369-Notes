@@ -121,9 +121,38 @@ so nothing is inconsistent
     * Logical logging: log more compact logical representation 
   + ends with transaction end block, containt the corresponding TID 
   
-- write TxEnd only when txbegin, inode and bitmap are written 
+- write TxEnd only when txbegin, inode and block are written 
   + if crash happens, we know this is not a valid entry 
 - now that journal entry is safe, write the actual data and metadata to their right locations on the FS (Checkpoint step)
 - Mark transaction as free in journal (free step)
 
-### Journalling Space Requirements 
+### Metadata Journalling 
+- recovery is much faster with journaling 
+  + replay only a few transactions instead of checling the whole disk
+- However normal operations are slower 
+  + every update must write to the journal first, then do the update 
+    * writing time is at least doubled 
+  + journal writing may break sequential writing 
+    * jump back and forth between writes to journal and writes to main region 
+  + Metadata journaling is similar, except we only write FS metadata (no actual data) to the journal 
+
+- to make sure inodes are not pointing to garbage, we write data before writing metadata to journal 
+  1. Write data, wait until it completes
+  2. Metadata journal write
+  3. Metadata journal commit
+  4. Checkpoint metadata
+  5. Free
+
+## Summary: Journaling 
+
+- jorunaling ensures file system consistency 
+- complexity is in the size of the journal, not the size of the disk 
+- widely adopted in most modern file systems 
+
+### Ext3 Final notes 
+
+- lacks modern FS features (e.g extents) 
+  + for recoverability, this may actually be an advantage 
+  + FS metadata is in fixed, well know locations, and data structures have redundancy 
+  + When faced with significant data corruotion, ext2/3 may be recoverable while a tree based file system 
+  may not 
