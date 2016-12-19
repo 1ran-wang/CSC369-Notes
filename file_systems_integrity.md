@@ -156,3 +156,136 @@ so nothing is inconsistent
   + FS metadata is in fixed, well know locations, and data structures have redundancy 
   + When faced with significant data corruotion, ext2/3 may be recoverable while a tree based file system 
   may not 
+
+
+### Log-Structured File System (LSF) 
+- different approach then FFS
+  + memory is increasing => don't care about reads, most will hit mem
+  + assume writes will pose the bigger I/O penalty 
+  + treat storage as a circular log 
+
+- Advantages
+  + write throughput improved (batched into large sequential chunks) 
+  + crash recovery - simpler 
+- Disadvantages 
+  + initial assumption may not hold => read much slower on HDDs 
+  
+- writes all file system data in a continuous log 
+- use inodes and directories from FFs 
+- segments: each has a summary block
+- summary block contains pointer to next one 
+- need a fresh segment => first clean an existing partially-used segment (garbage collection) 
+- LFS not so easy
+  + updates are sequential => inodes all over disk 
+  + also inodes not static keep moving 
+
+- needs an inode map to find inodes 
+  + inode number is no longer a simple index from the start of an inode table as before 
+  + must be persistent so must also be on disk 
+    * on a fixed part of the disk 
+
+- check point region (CR) 
+  + pointers to the latest pieces of the inode map 
+  + so find imap pieces by reading the CR 
+
+### Crash Recovery 
+
+- what if the system crashes while LFS is writing to disk 
+- LFS normally buffers writes in segment 
+  + when fill (or at periodic intervals), writes segment to disk 
+- LFS also updates CR 
+- crashs can happen at any point, how do we handle crashes during these writes 
+  + Solution
+    1. Uncommitted segments: reconstruct from the log after reboot 
+    2. CR: Keep two CRs, at either end of the disk; alternate writes
+      + update protocol (header, body, last block) 
+      
+### Garbage Collection 
+- must periodically find obsolete versions of file data ad cleen up
+- cleaning done on a segment by segment basis 
+  + since segments are large chunks, it avoids the situation of having small holes of free space 
+
+## LFS Summary 
+
+- instead of overwriting in place, append to log and reclaim (garbage collect) obsolete data later 
+- Advantage: very efficient writes 
+- Disadvantage 
+  + less efficient reads, but assumes most reads hit in memory anyway 
+  + garbage collection is a tricky problem 
+
+### Virtual File System (VFS) Concept 
+
+- provides an abstract file system interface 
+  + seperates abstraction of file and collections of files from specific implementations 
+  + System calls such as open, read, write etc. can be implemented in terms of operations on the abstract 
+  file system
+    * vfs_open, vfs_close 
+  + Abstraction layer is the OS itself 
+    * User level programmer interacts with the file systems through the sytem calls 
+    
+### Redundancy (Another approach to data persistency) 
+
+- redundant array of independant disks (RAID) 
+- reliability strategies: 
+  - data duplicated - mirror images, redundant full copy => one disk fails, we have the mirror
+  - data spread out accross multiple disks with redundancy => can recover from a disk failure, by reconstructing the data
+- Concepts: 
+  + redundancy/mirroring: keep multiple copies of the same bock on different drives just in case a drive fails
+  + Parity information: XOR each bit from 2 drives, store checksum on 3rd drive 
+  
+### Solid State Disks (SSDs) 
+
+- replace rotating mechanical disks with non volatile memory 
+  - battery backed ram and NAND flash
+- advantage: faster 
+- disadvantages  
+  + expensive
+  + wear out (flash based) 
+
+### SSD Characteristics 
+
+- data cannot be modified in place 
+  + no overwrite without erase 
+- Terminology 
+  + page(unit of read/write), block (unit of erase operation) 
+- Uniform random access performance 
+  + disks typically have multiple channels so data can be split across blocks, speeding access time 
+  
+### Writing 
+
+- Consider updating a file system block (e.g a bitmap allocation block in ext2 file system)
+  + find the block containing the target page 
+  + read all active pages in the block into controller memory 
+  + update tatget page with new data in controller memory 
+  + erase the block (high voltage to set all bits to 1)
+  + write entire block to drive 
+- Some FS blocks are frequently updated 
+  + and ssd blocks wear out (limited erase cycles) 
+
+### SSD Algorithms 
+
+- Wear levelling 
+  + always write to new location 
+  + keep a map from logical FS block nuber to current SSD block and page location 
+  + Old versions of logically overwritten pages are "stale" 
+- Garbage collection 
+  + reclaiming stale pages and creating empty erased blocks 
+- RAID 5 (with parity checking) stripping across I/) chanels to multiple NAND chips 
+
+## Summary File System Goals 
+
+- Efficiently translate file name into file number using a directory 
+- Sequential file access performance 
+- Efficient random access to any file block 
+- Efficient support for small files (overhead in terms of space and access time) 
+- support large files 
+- efficient metadata storage and lookup
+- crash recovery 
+
+## Summary: File System Components 
+
+- Index structure to locate each block of a file
+- Free space management 
+- locality heuristics 
+- crash recovery 
+
