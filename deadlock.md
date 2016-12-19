@@ -1,6 +1,6 @@
 # Concurrency Bugs, Deadlock and Transactions 
 
-## No-Deadlock bugs 
+## Non-Deadlock bugs 
 
 - Atomicity violation bugs 
   + when a code region intended to be atmoic, bu the atomicity is no enforced during execution 
@@ -163,4 +163,119 @@ Algorithm
       - if so, continure
       - if not, restore old state and block processes until it is safe to grant the request 
  
+ ### Deadlock Detection & Recovery 
  
+ - prevention and avoidance are awkward and costly
+ - instead, allow deadlocks to occur, but detect when this happens and find a way to break it 
+ - finding circular waits is equivalent to finding a cycle in the resource allocation graph 
+  + nodes are processes and resources 
+  + Arcs from a resource to a process represent allocations 
+  + arcs from a process to a resource represent ungranted requests 
+
+### Deadlock Recovery 
+- basic idea is to break the cyle 
+  + Drastic: kill all deadlocked processes
+  + Painful - backup and restart deadlocked processes
+  + better - selectively kill deadlocked processes until cycle is broken 
+    * rerun detection alg after each kill 
+  + tricky - selectively preempt resources until cycle is brokern 
+    * processes must be rolled back 
+
+### Why does the ostrich alg work?
+
+- Algorithm: ignore the problem and hope it doesn't happen often 
+- recall the causes of deadlock:
+  + resources are finite
+  + processes wait if a resource they need is unavailable
+  + resources may be held by other waiting processes 
+- modern operating systems virtualize most physical resources, eliminating the first cause of deadlock
+  + some logical resources can't be virtualized (there has to be exactly one), such as bank accounts or 
+  process table
+    * These are protected by synchronization objects, which are now the only resources that we can deadlock
+    on 
+    
+#### Starvation
+
+- a thread is suffering from starvation if it is waiting indefinitely because other threads are in some way 
+preferred
+
+### Communicating Deadlocks
+- messages between communicating processes are a consumable resource 
+- example 
+  + process B is waiting for a request
+  + process A sends a request to B, and waits for reply 
+  + The request message is lost in the network 
+  + B keeps waiting for the request, A keeps waiting for a reply => deadlock 
+- Solution?
+  + use timeouts, resend message and use protocols to detect duplicate messages 
+  
+## Transactions and Atomicity 
+
+### Atomic transactions 
+
+Def: Transaction 
+  - A collection of operations that performs a single logical function 
+  - we will consider a sequence of read and write operations, terminated by a commit or abort 
+Def: Committed
+  - A transaction that has completed successfully; once committed, a transaction cannot be undone 
+Def: Aborted
+  - A transaction that did not complete normally; typically rollback and start again 
+  
+### Write ahead logging 
+- before performing operations on data, write intended operations to a log on stable storage 
+- log records id transaction, the data item, the olde value, and new value 
+- special records indicate the start and commit(or abort) of a transaciton 
+- log can be used to undo/redo the effect of any transaction, allowing recovery from arbitrary failures 
+
+### Checkpoints 
+- limitations of basic log strategy
+  + time consuming to process entire log after failure 
+  + large amount of space required by log 
+  + performance penalty - each write requires a log update before actual data update 
+- Checkpoint help with the first two problems 
+  + write all updates to log and data to stable storage; periodically write a checkpoint entry to the log
+  + recovery only needs to look at log since last checkpoint 
+  
+### Concurrent Transactions 
+- transactions must appear to execute in some arbitrary but serial order 
+  + Solution 1: All transactions execute in a critical section, with a single common lock to protect access
+  to all shared data
+    * but most transactions will access different data 
+    * limits concurrency unnecessarily 
+  + Solution 2: Allow operations from multiple transactions to overlap, as long as they don't conflict 
+    * end result of a set of transaction must be indistinguishable from Solution 1
+
+### Conflicting Operations 
+
+- operations in two different transactions conflict if both access the same data item and at least one is a write 
+  + non conflicting operations can be reordered without changing the outcome 
+  + if a serial schedule can be obtained by swapping non-conflicting operations, then the original schedule
+  is conflict-serializable 
+  
+### Ensuring Serializability 
+- Two phase locking 
+  + individual data items have thier own locks 
+  + each transaction has a growing phase and shrinking phsae:
+    * Growing: a transaction may obtain locks, but may not release any lock 
+    * Shrinking: a transaction may release locks, but not acquire any new ones 
+  + doesn't guarantee deadlock-free 
+    + Fix: prevent hold and wait by aborting and retrying transaction if any lock is unavailable 
+
+### Timestamp Protocols
+
+- each transaction gets unique timestampe before it starts executing 
+  + transaction with earlier timestamp msut appear to complete before any later transactions 
+- each data item has two timestamps 
+  + W-TS: the largest timestampt of any transaction that successfully wrote the item 
+  + R-TS: The largest timestampt of any transaction that successfully read the item 
+
+### Timestamp ordering 
+- reads on data X:
+  - if transaction has earlier timestamp than W-TS on data X, then transaction needs to read a value that was
+  already overwritten 
+    + Abort transaction, restart with new timestamp
+- Writes 
+  - if transaction has earlier timestamp than R-TS (W-TS) on data, then the value produced by this write shouldhave been read (overwritten) already 
+    + abort and restart 
+
+- some transaction may starve (abort and restart repeatedly) 
