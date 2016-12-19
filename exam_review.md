@@ -27,10 +27,10 @@
   + Like a seperate process but shares the same address space 
 - What is the difference betweem user-level threads and kernel-level threads?
 - How are new processes created? Deleted? Zombies? 
-  + created by another process, then OS   
-    1. Create a new process with a new PCB, address space structure and allocate memory 
-    2. Load executable and initialize start state for process to ready 
-    3. Change state to running 
+  + created by using fork() which creates and initializes a new PCB and address space 
+    * initializes the address space with a copy of the entire contents of the address space of the parent 
+    * initializes the kernel resources to point to the resources used by parent
+    * places the PCB on the ready queue 
   + deleted by calling exit() where a process voluntarily releases all resources 
     * but OS waits until the process is done running and context switch to another process is completed before freeing memory
   + when a process exits it is a zombie until its parent cleans up the rest of the retained data 
@@ -52,7 +52,6 @@
 - What state can a process be in?
   * ready, running, blocked 
 - How do threads relate to virtual address spaces? 
-- From program to process 
  
 
 ### System Calls 
@@ -65,15 +64,15 @@
   + supports OS goal of efficient virtualization by giving OS control whenever a process does something it shouldnt and 
   periodic hardware generated interrupts that ensure the OS gets control back at regular intervals 
 - What happens when a proces makes a system call?
-    1. Os fills in interrupt table at boot time 
+    1. OS fills in interrupt table at boot time 
     2. CPU execution loop: Fetch instruction at PC, decode instr and execute 
     3. Interrupt occurs (signal from hardware) 
     4. CPU changes mode, diasables interrupt 
     5. Interrupted PC value is saved 
-    6. IDTR + interupt number is used to set PC to satrt of interrupt handler 
+    6. IDTR + interupt number is used to set PC to start of interrupt handler
     7. Exectuion continues 
 - How and when does a context switch happen?
-  + when we swicth the CPU to another process
+  + when we switch the CPU to another process
   + can happen when process calls yield(), makes a system call or timer interrupt handler decides to switch processes 
   + saves the state of the old process and loads the saved state for a new process 
     * saves registers to kernel stack, move to kernel mode and jump to trap handler
@@ -84,6 +83,7 @@
 ### Concurrency 
 
 - What is the critical section problem?
+
 - What properties does a solution need to have?
 - What is a race condition?
 - Synchronization primitives
@@ -159,7 +159,7 @@
 
 ### Page Faults 
 
-- What is a page fault 
+- What is a page fault
 - How is it used to implement demand paged virtual memory?
 - What is the complete sequence of steps, from a TLB miss to paging in from disk, for translating a virtual
 address to a physical address?
@@ -261,9 +261,40 @@ address to a physical address?
 ### Deadlocks 
 
 - What is the definition of a deadlock?
+  - the permanent blocking set of processes that either compete for system resources or communicate with each other
 - What are the conditions for deadlock? 
+  1. mutual exclusion
+    + only one process may use a resource at a time
+  2. Hold and Wait
+    + a process may hold allocated resources while awaiting assignment of others 
+  3. No preemption
+    + no resource can be forcibly removed from a process holding it 
+  4. Circular wait 
+    + a closed chain of processes exist such that each process holds at least one resource needed by the next
+    process in the chain
 - What is deadlock prevention/avoidance/detection & recovery 
+  + prevent by ensuring one of the four conditions doesn't occur 
+  + avoidance strategies include
+    1. Do not start a process if its max resource requirements together with the maximum needs of all 
+    processes already running exceed the total system resources 
+    2. Do not grant an individual resource request, if any future resource allocation "path" leads to deadlock
+  + restrictions on Avoidance 
+    * Maximum resource requirements for each process must be know in advance 
+    * processes must be independant, if order of execution is constrained by synchronization requirements, system is not free 
+    to choose a safe sequence 
+    * There must be a fixed number of resources to allocate 
 - How does the banker's algorithm work? Safe states? 
+  + for every resource request 
+    1. Can the request be granted?
+      * if not, request is impossible at this point => block the process until we can grant the request
+    2. Assume that the request is granted 
+      * update state assuming request is granted 
+    3. check if new state is safe
+      * if so continue 
+      * if not, restore the old state and block the process until it is safe to grant the request 
 - What is a resource allocation graph, what is it used for? 
+  * nodes are resources and processes
+  * edge from resource to process, means that resource is allocated to that process at this time
+  * edge from process to resource represents an ungranted request by the process to use that resource
 - No questions on concurrent transactions on this topic 
 
