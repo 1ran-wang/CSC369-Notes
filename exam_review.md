@@ -26,8 +26,14 @@
   + A multi-threaded program has multiple points of execution 
   + Like a seperate process but shares the same address space 
 - What is the difference betweem user-level threads and kernel-level threads?
-  + 
 - How are new processes created? Deleted? Zombies? 
+  + created by another process, then OS   
+    1. Create a new process with a new PCB, address space structure and allocate memory 
+    2. Load executable and initialize start state for process to ready 
+    3. Change state to running 
+  + deleted by calling exit() where a process voluntarily releases all resources 
+    * but OS waits until the process is done running and context switch to another process is completed before freeing memory
+  + when a process exits it is a zombie until its parent cleans up the rest of the retained data 
 - What does the address space look like? PCB?
   * An address space that holds code and data for the executing program, and an executions stack encapsulating 
     the state of procedure calls 
@@ -47,9 +53,7 @@
   * ready, running, blocked 
 - How do threads relate to virtual address spaces? 
 - From program to process 
-  1. Create a new process with a new PCB, address space structure and allocate memory 
-  2. Load executable and initialize start state for process to ready 
-  3. Change state to running 
+ 
 
 ### System Calls 
 
