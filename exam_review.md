@@ -5,6 +5,10 @@
 - What is an operating System? 
   + An abstraction of the hardware, supporting basic functions of the computer such as scheduling tasks, executing apps, and controlling peripherals
   + allow programs to share memory, allow them to interact with devices etc 
+  + An OS is a virtual machine that extends and simplifies the interface to the physical machine
+  + A resource allocater that allows the proper use of resources 
+  + A control program that controls the execution of user programs to prevent errors and improper use of the 
+  computer
 - Purpose of an Operating Sysem?
   1. Virtualizaion
     * Makes the system easier to use, because you do not need to worry about hardware specifics such as where memory is, etc 
@@ -15,24 +19,63 @@
 ### Processes & Threads 
 
 - What is a process? 
-  + a running program 
+  + a running program , an OS abstraction of execution of a task 
+  + contains all of the state for a program in execution 
 - What is a thread?
   + an abstraction of a single running program 
   + A multi-threaded program has multiple points of execution 
   + Like a seperate process but shares the same address space 
-- __TO DO__
 - What is the difference betweem user-level threads and kernel-level threads?
+  + 
 - How are new processes created? Deleted? Zombies? 
 - What does the address space look like? PCB?
+  * An address space that holds code and data for the executing program, and an executions stack encapsulating 
+    the state of procedure calls 
+  * The PC indicating the next instruction 
+  * A set of general purpose registers with current values 
+  * A set of operating system resoruces such as open files, network connections etc 
+  * Context for kernel execution (a kernel thread and stack) 
+  * OS data about the process is stored in a process control block (PCB) 
+    + process state (ready running, blocked) 
+    + prgram counter: address of the next instruction 
+    + CPU registers: must be saved at an interrupt 
+    + CPU scheduling information: process priority 
+    + memory management info: page tables 
+    + accounting information: resource use info
+    + I/) status information: list of open files
 - What state can a process be in?
+  * ready, running, blocked 
 - How do threads relate to virtual address spaces? 
+- From program to process 
+  1. Create a new process with a new PCB, address space structure and allocate memory 
+  2. Load executable and initialize start state for process to ready 
+  3. Change state to running 
 
 ### System Calls 
 
 - What are protection domains? Why do we need them?
+  + There are two modes, user mode and system mode 
+  + Protection domains designate some instructions as privleged instructions to certain domains
 - How do interrupts work? Why do we need them?
+  + it is a hardware signal that causes the CPU to jump to pre defined instructions called an interrupt handler 
+  + supports OS goal of efficient virtualization by giving OS control whenever a process does something it shouldnt and 
+  periodic hardware generated interrupts that ensure the OS gets control back at regular intervals 
 - What happens when a proces makes a system call?
+    1. Os fills in interrupt table at boot time 
+    2. CPU execution loop: Fetch instruction at PC, decode instr and execute 
+    3. Interrupt occurs (signal from hardware) 
+    4. CPU changes mode, diasables interrupt 
+    5. Interrupted PC value is saved 
+    6. IDTR + interupt number is used to set PC to satrt of interrupt handler 
+    7. Exectuion continues 
 - How and when does a context switch happen?
+  + when we swicth the CPU to another process
+  + can happen when process calls yield(), makes a system call or timer interrupt handler decides to switch processes 
+  + saves the state of the old process and loads the saved state for a new process 
+    * saves registers to kernel stack, move to kernel mode and jump to trap handler
+    * then OS handles trap, calls switch() routine by saving registers of process A to proc-struct(A0), restore 
+    the registers of B from proc-struct(B), switch to kernel stack of B and return from trap into b
+    * restore registers of B from kernel stack, change mode to user and jump to B's PC 
 
 ### Concurrency 
 
