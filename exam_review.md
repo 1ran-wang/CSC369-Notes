@@ -251,8 +251,11 @@ address to a physical address?
 ### Advanced FS Topics 
 
 - THEME: crash consistency, optimizing writes, redundancy 
-- What are some crash recovery mechaniss? 
+- What are some crash recovery mechanisms? 
 - What is fsck? What are its limitations?
+  - a Unix tool that checks if there are any inconsistencies in the file system
+  - very slow because it has to check through the entire file system
+  - also it cannot do anything about lost data 
 - How is hournaling performed in modern file systems like ext3? Advantages over fsck? Metadata journaling?
 - What is LFS? What was the key idea in its design? Advantages and drawbacks? 
 - Can we handle complete disk crashes? What's the idea behind RAID?
